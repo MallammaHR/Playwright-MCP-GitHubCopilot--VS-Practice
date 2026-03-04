@@ -32,6 +32,15 @@ jobs:
       - name: Run Playwright tests
         run: npm test
 
+      - name: Ensure report artifact exists
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p playwright-report
+          if [ ! -f playwright-report/index.html ]; then
+            echo "<html><body><h1>No Playwright HTML report generated</h1></body></html>" > playwright-report/index.html
+          fi
+
       - name: Show report folder
         if: always()
         run: |

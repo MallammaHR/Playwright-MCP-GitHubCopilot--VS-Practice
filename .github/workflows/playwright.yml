@@ -1,0 +1,61 @@
+name: Playwright CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Playwright tests on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [18.x]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Install Allure reporter in CI
+        run: |
+          npm install -D allure-playwright allure-commandline --no-audit --no-fund
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: npm test
+        env:
+          CI: true
+
+      - name: Generate Allure report (if results exist)
+        if: always()
+        run: |
+          npx allure generate allure-results -o allure-report || echo "No allure-results"
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.os }}
+          path: playwright-report
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-${{ matrix.os }}
+          path: allure-report
